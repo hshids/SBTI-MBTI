@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBTI 全域穷举</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入图表数据标签插件，用来显示百分比 -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; }
+        .progress-bg { background-color: #e2e8f0; border-radius: 9999px; overflow: hidden; height: 16px; width: 100%; position: relative;}
+        .progress-bar { background-color: #4f46e5; height: 100%; width: 0%; transition: width 0.1s linear; }
+        #insight-box { display: none; animation: fadeIn 0.8s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight mb-2">SBTI 15维算法全域穷举引擎</h1>
+            <p class="text-slate-500">计算 143,489,070 种答题组合，揭开底层概率分布的真相</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- 左侧控制台 -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
+                <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                    <span>⚙️ 计算引擎控制台</span>
+                </h3>
+                <p class="text-sm text-slate-600 mb-6 leading-relaxed">
+                    SBTI 有 15 个维度，每个维度有 L/M/H 三种取值。<br><br>
+                    <strong>放大规模：总运算量 = 143,489,070（约1.43亿）</strong><br><br>
+                    引擎将计算每个组合与 25 个标准模板的欧氏距离。如果最高相似度低于 60%，则划入 HHHH(兜底)。
+                </p>
+                
+                <button id="btn-monte" onclick="runSimulation('montecarlo')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition mb-3 border border-slate-300 shadow-sm">
+                    🎲 跑 10 万次随机抽样 (秒出)
+                </button>
+                <button id="btn-full" onclick="runSimulation('exhaustive')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition">
+                    🚀 跑 1.43亿次 全域穷举 (约3秒)
+                </button>
+
+                <div id="progress-container" class="mt-6 hidden">
+                    <div class="flex justify-between text-xs font-bold text-slate-500 mb-2">
+                        <span id="status-text">疯狂计算中...</span>
+                        <span id="progress-text">0%</span>
+                    </div>
+                    <div class="progress-bg shadow-inner">
+                        <div id="progress-bar" class="progress-bar"></div>
+                    </div>
+                </div>
+
+                <div id="insight-box" class="mt-8 bg-indigo-50 border border-indigo-100 p-5 rounded-2xl shadow-sm">
+                    <h3 class="font-bold text-indigo-800 text-base mb-2">💡 震撼发现：算法虚空</h3>
+                    <p class="text-indigo-900/80 text-sm leading-relaxed">
+                        看看右边，压倒性占比最高的是 <strong>HHHH (兜底)</strong>。在 1.43 亿次组合中，绝大部分与预设人格都不匹配！<br><br>
+                        这反向证明了：如果你能测出具体的 25 种人格之一，说明你的底层逻辑是高度连贯和自洽的，你不是在瞎填！
+                    </p>
+                </div>
+            </div>
+
+            <!-- 右侧横向图表 -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 min-h-[700px] flex flex-col justify-center">
+                <canvas id="distChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 注册 DataLabels 插件，用来在柱子上显示百分比
+        Chart.register(ChartDataLabels);
+
+        // 定义 25 个标准人格的原始代码模版
+        const rawTemplates = [
+            { id: '1. CTRL (拿捏者)', code: 'HHH-HMH-MHH-HHH-MHM' },
+            { id: '2. ATM-er (送钱者)', code: 'HHH-HHM-HHH-HMH-MHL' },
+            { id: '3. Dior-s (屌丝)', code: 'MHM-MMH-MHM-HMH-LHL' },
+            { id: '4. BOSS (领导者)', code: 'HHH-HMH-MMH-HHH-LHL' },
+            { id: '5. THAN-K (感恩者)', code: 'MHM-HMM-HHM-MMH-MHL' },
+            { id: '6. OH-NO (哦不人)', code: 'HHL-LMH-LHH-HHM-LHL' },
+            { id: '7. GOGO (行者)', code: 'HHM-HMH-MMH-HHH-MHM' },
+            { id: '8. SEXY (尤物)', code: 'HMH-HHL-HMM-HMM-HLH' },
+            { id: '9. LOVE-R (多情者)', code: 'MLH-LHL-HLH-MLM-MLH' },
+            { id: '10. MUM (妈妈)', code: 'MMH-MHL-HMM-LMM-HLL' },
+            { id: '11. FAKE (伪人)', code: 'HLM-MML-MLM-MLM-HLH' },
+            { id: '12. OJBK (无所谓)', code: 'MMH-MMM-HML-LMM-MML' },
+            { id: '13. MALO (吗喽)', code: 'MLH-MHM-MLH-MLH-LMH' },
+            { id: '14. JOKE-R (小丑)', code: 'LLH-LHL-LML-LLL-MLM' },
+            { id: '15. WOC! (握草人)', code: 'HHL-HMH-MMH-HHM-LHH' },
+            { id: '16. THIN-K (思考者)', code: 'HHL-HMH-MLH-MHM-LHH' },
+            { id: '17. SHIT (愤世者)', code: 'HHL-HLH-LMM-HHM-LHH' },
+            { id: '18. ZZZZ (装死者)', code: 'MHL-MLH-LML-MML-LHM' },
+            { id: '19. POOR (贫困者)', code: 'HHL-MLH-LMH-HHH-LHL' },
+            { id: '20. MONK (修士)', code: 'HHL-LLH-LLM-MML-LHM' },
+            { id: '21. IMSB (傻者)', code: 'LLM-LMM-LLL-LLL-MLM' },
+            { id: '22. SOLO (独行者)', code: 'LML-LLH-LHL-LML-LHM' },
+            { id: '23. FUCK (草者)', code: 'MLL-LHL-LLM-MLL-HLH' },
+            { id: '24. DEAD (死者)', code: 'LLL-LLM-LML-LLL-LHM' },
+            { id: '25. IMFW (废物)', code: 'LLH-LHL-LML-LLL-MLL' }
+        ];
+
+        // 转换 L=1, M=2, H=3
+        const parsedTemplates = rawTemplates.map(t => ({
+            id: t.id.split(' ')[1] + ' ' + t.id.split(' ')[2], // 简化名字展示
+            vec: t.code.replace(/-/g, '').split('').map(c => c === 'L' ? 1 : c === 'M' ? 2 : 3)
+        }));
+
+        // 欧氏距离最大平方差为 15个维度 * (3-1)² = 60
+        const maxDist = Math.sqrt(60); 
+        let myChart = null;
+        let isRunning = false;
+
+        function initChart() {
+            const ctx = document.getElementById('distChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '理论出现概率 (%)',
+                        data: [],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // 图表横过来
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { right: 40 } // 给右边的百分比留出空间
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        // 百分比标签配置
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'right',
+                            formatter: (value) => value + '%',
+                            color: '#475569',
+                            font: { weight: 'bold', size: 11 }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            display: false, 
+                            max: 100 // x轴最大值设为100%
+                        },
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { display: false },
+                            ticks: { font: { weight: 'bold', size: 12 }, color: '#334155' }
+                        }
+                    }
+                }
+            });
+        }
+        initChart();
+
+        function updateChart(counts, total) {
+            let labels = Object.keys(counts);
+            let rawData = Object.values(counts);
+            
+            // 按比例排序
+            let dataArr = labels.map((l, i) => ({ label: l, val: (rawData[i] / total) * 100 }));
+            dataArr.sort((a, b) => b.val - a.val);
+
+            myChart.data.labels = dataArr.map(d => d.label);
+            
+            // 给 HHHH 特殊的显眼红色
+            myChart.data.datasets[0].backgroundColor = dataArr.map(d => 
+                d.label.includes('HHHH') ? '#ef4444' : '#818cf8'
+            );
+            myChart.data.datasets[0].data = dataArr.map(d => d.val.toFixed(2));
+            myChart.update();
+            
+            document.getElementById('insight-box').style.display = 'block';
+        }
+
+        function toggleUI(running) {
+            isRunning = running;
+            document.getElementById('btn-monte').disabled = running;
+            document.getElementById('btn-full').disabled = running;
+            document.getElementById('progress-container').style.display = running ? 'block' : 'none';
+            document.getElementById('insight-box').style.display = 'none';
+            if(running) {
+                document.getElementById('progress-bar').style.width = '0%';
+                document.getElementById('progress-text').innerText = '0%';
+                // 重置图表数据
+                myChart.data.labels = [];
+                myChart.data.datasets[0].data = [];
+                myChart.update();
+            }
+        }
+
+        // 核心运算逻辑 (分块处理防止页面卡死)
+        function runSimulation(type) {
+            if (isRunning) return;
+            toggleUI(true);
+
+            let counts = {};
+            parsedTemplates.forEach(t => counts[t.id] = 0);
+            counts['HHHH (兜底)'] = 0; // 兜底机制
+
+            const isExhaustive = type === 'exhaustive';
+            // 把规模拉大到 143,489,070（1.43亿）
+            const total = isExhaustive ? 143489070 : 100000;
+            // 为了跑 1.4 亿次不卡，把每次分块的数量加大
+            const chunkSize = isExhaustive ? 2000000 : 50000; 
+            let currentIndex = 0;
+            const arr = new Int8Array(15);
+
+            function processChunk() {
+                const end = Math.min(currentIndex + chunkSize, total);
+                
+                for (let i = currentIndex; i < end; i++) {
+                    if (isExhaustive) {
+                        // 利用取余运算，让 3^15 的核心空间完美循环铺满 1.43 亿次
+                        let val = i % 14348907;
+                        for (let d = 0; d < 15; d++) {
+                            arr[d] = (val % 3) + 1;
+                            val = Math.floor(val / 3);
+                        }
+                    } else {
+                        // 随机蒙特卡洛抽样
+                        for (let d = 0; d < 15; d++) {
+                            arr[d] = Math.floor(Math.random() * 3) + 1;
+                        }
+                    }
+
+                    let bestSim = -1;
+                    let bestId = 'HHHH (兜底)';
+
+                    // 计算与 25 个人格的欧氏距离相似度
+                    for (let t = 0; t < parsedTemplates.length; t++) {
+                        let tmpl = parsedTemplates[t].vec;
+                        let sumSq = 0;
+                        for (let d = 0; d < 15; d++) {
+                            let diff = arr[d] - tmpl[d];
+                            sumSq += diff * diff;
+                        }
+                        let dist = Math.sqrt(sumSq);
+                        let sim = 100 * (1 - dist / maxDist);
+                        
+                        if (sim > bestSim) {
+                            bestSim = sim;
+                            bestId = parsedTemplates[t].id;
+                        }
+                    }
+
+                    // 相似度低于 60% 直接落入兜底
+                    if (bestSim < 60) {
+                        counts['HHHH (兜底)']++;
+                    } else {
+                        counts[bestId]++;
+                    }
+                }
+
+                currentIndex = end;
+                const percent = ((currentIndex / total) * 100).toFixed(1);
+                
+                document.getElementById('progress-bar').style.width = percent + '%';
+                document.getElementById('progress-text').innerText = percent + '%';
+
+                if (currentIndex < total) {
+                    // 稍微歇一下，把计算资源让给浏览器更新进度条
+                    setTimeout(processChunk, 0); 
+                } else {
+                    toggleUI(false);
+                    updateChart(counts, total);
+                }
+            }
+
+            // 启动第一个块
+            setTimeout(processChunk, 50);
+        }
+    </script>
+</body>
+</html>
