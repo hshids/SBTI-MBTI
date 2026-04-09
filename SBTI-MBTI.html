@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SBTI × MBTI 终极融合系统</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg2: #f6f5f2;
+    --bg3: #eeecea;
+    --text: #1a1a18;
+    --text2: #6b6b66;
+    --text3: #9e9e99;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --radius: 10px;
+    --radius-lg: 14px;
+    /* 原有优雅配色标签 */
+    --teal: #1D9E75; --teal-bg: #E1F5EE; --teal-text: #0F6E56;
+    --purple: #5A51A8; --purple-bg: #EEEDFE; --purple-text: #3C3489;
+    --coral: #D15A36; --coral-bg: #FAECE7; --coral-text: #993C1D;
+    --amber: #C9801C; --amber-bg: #FAEEDA; --amber-text: #854F0B;
+    --blue: #2A79C9; --blue-bg: #E6F1FB; --blue-text: #185FA5;
+    --pink: #CC4B73; --pink-bg: #FBEAF0; --pink-text: #993556;
+    --gray: #888888; --gray-bg: #F0F0F0; --gray-text: #555555;
+    --font-mono: 'Courier New', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #242422; --bg3: #2e2e2b;
+      --text: #e8e6e0; --text2: #a0a09a; --text3: #6a6a64;
+      --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
+      --teal-bg: #04342C; --teal-text: #5DCAA5;
+      --purple-bg: #26215C; --purple-text: #AFA9EC;
+      --coral-bg: #4A1B0C; --coral-text: #F0997B;
+      --amber-bg: #412402; --amber-text: #FAC775;
+      --blue-bg: #042C53; --blue-text: #85B7EB;
+      --pink-bg: #4B1528; --pink-text: #ED93B1;
+      --gray-bg: #333333; --gray-text: #BBBBBB;
+    }
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Georgia', 'Times New Roman', serif; line-height: 1.6; min-height: 100vh; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  
+  header { margin-bottom: 2rem; border-bottom: 0.5px solid var(--border2); padding-bottom: 1.5rem; }
+  header h1 { font-size: 26px; font-weight: normal; letter-spacing: -0.5px; color: var(--text); margin-bottom: 8px;}
+  header p { font-size: 13px; color: var(--text2); font-family: sans-serif; }
+  
+  .tabs { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; font-family: sans-serif; border-bottom: 1px solid var(--border); padding-bottom: 12px;}
+  .tab { padding: 6px 14px; border: 0.5px solid var(--border2); border-radius: 20px; font-size: 13px; cursor: pointer; background: var(--bg); color: var(--text2); transition: all .15s; font-weight: 500;}
+  .tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .tab:hover:not(.active) { background: var(--bg2); color: var(--text); }
+  
+  .section { display: none; animation: fadeIn 0.3s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+  
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 12px;}
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 10px; font-family: sans-serif; }
+  .card p { font-size: 13px; color: var(--text2); line-height: 1.7; font-family: sans-serif; }
+  
+  /* 标签系统 */
+  .label { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin-bottom: 6px; font-family: sans-serif; letter-spacing: 0.3px; }
+  .lb-purple { background: var(--purple-bg); color: var(--purple-text); }
+  .lb-teal { background: var(--teal-bg); color: var(--teal-text); }
+  .lb-coral { background: var(--coral-bg); color: var(--coral-text); }
+  .lb-amber { background: var(--amber-bg); color: var(--amber-text); }
+  .lb-blue { background: var(--blue-bg); color: var(--blue-text); }
+  .lb-pink { background: var(--pink-bg); color: var(--pink-text); }
+  .lb-gray { background: var(--gray-bg); color: var(--gray-text); }
+  
+  /* 维度对照表 */
+  .dim-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--border); font-family: sans-serif; }
+  .dim-row:last-child { border-bottom: none; }
+  .dim-left, .dim-right { flex: 1; }
+  .arrow-mid { color: var(--text3); font-size: 14px; padding-top: 4px; flex-shrink: 0; }
+  .dim-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .dim-desc { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+  
+  /* 四象限底图 */
+  .q-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+  .q-box { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; font-family: sans-serif; }
+  .q-header { margin-bottom: 12px; border-bottom: 0.5px solid var(--border); padding-bottom: 8px;}
+  .q-title { font-size: 15px; font-weight: 600; }
+  .q-desc { font-size: 11px; color: var(--text3); margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase;}
+  .chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: var(--bg); border: 0.5px solid var(--border2); color: var(--text2); }
+  
+  /* 表格样式 */
+  .table-wrap { overflow-x: auto; border: 0.5px solid var(--border); border-radius: var(--radius-lg); background: var(--bg); }
+  .map-table { width: 100%; border-collapse: collapse; font-family: sans-serif; min-width: 650px;}
+  .map-table th { font-size: 12px; font-weight: 600; color: var(--text2); text-align: left; padding: 10px 12px; border-bottom: 0.5px solid var(--border2); background: var(--bg2); }
+  .map-table td { font-size: 13px; padding: 12px; border-bottom: 0.5px solid var(--border); color: var(--text); vertical-align: top; }
+  .map-table tr:last-child td { border-bottom: none; }
+  .map-table tbody tr:hover td { background: var(--bg2); }
+  
+  .sbti-code { font-weight: 600; font-family: var(--font-mono); font-size: 12px; background: var(--bg2); padding: 2px 6px; border-radius: 4px; color: var(--text); }
+  .mbti-code { font-weight: 600; font-family: var(--font-mono); font-size: 11px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 4px 2px 0; }
+  .t-pri { color: var(--blue-text); background: var(--blue-bg); border: 0.5px solid rgba(24, 95, 165, 0.15); }
+  .t-sec { color: var(--text2); background: var(--bg3); border: 0.5px dashed var(--border2); }
+
+  /* 双向热力系统 (核心重构) */
+  .heat-controls { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; font-family: sans-serif; }
+  .heat-btn { padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); transition: 0.2s; }
+  .heat-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  
+  .heat-layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; font-family: sans-serif; }
+  @media (max-width: 768px) { .heat-layout { grid-template-columns: 1fr; } }
+  
+  .heat-panel { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; }
+  .heat-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid var(--border); padding-bottom: 10px;}
+  
+  /* SBTI 列表 */
+  .sbti-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 400px; overflow-y: auto; align-content: flex-start; padding-bottom: 10px;}
+  .sbti-list::-webkit-scrollbar { width: 4px; }
+  .sbti-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  .sbti-pill { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text2); transition: 0.2s; }
+  .sbti-pill:hover { background: var(--bg2); }
+  
+  /* MBTI 热力网格 */
+  .mbti-grid-4x4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: auto; margin-bottom: auto;}
+  .mbti-cell { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem 0; text-align: center; background: var(--bg2); color: var(--text3); font-family: var(--font-mono); font-weight: bold; font-size: 16px; transition: all 0.3s ease; position: relative; cursor: pointer;}
+  .mbti-cell:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-color: var(--border2); }
+  
+  .mbti-cell .badge { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 10px; font-family: sans-serif; font-weight: normal; white-space: nowrap; opacity: 0; transition: 0.3s; }
+  .mbti-cell.active-pri .badge, .mbti-cell.active-sec .badge { opacity: 0.9; }
+
+  /* 动态颜色注入类名 */
+  .cell-pri-purple { background: var(--purple); color: #fff; border-color: var(--purple); transform: scale(1.02); box-shadow: 0 4px 10px rgba(90, 81, 168, 0.2);}
+  .cell-sec-purple { background: var(--purple-bg); color: var(--purple-text); border-color: rgba(90, 81, 168, 0.2); }
+  .pill-active-purple { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+  .cell-pri-teal { background: var(--teal); color: #fff; border-color: var(--teal); transform: scale(1.02); box-shadow: 0 4px 10px rgba(29, 158, 117, 0.2);}
+  .cell-sec-teal { background: var(--teal-bg); color: var(--teal-text); border-color: rgba(29, 158, 117, 0.2); }
+  .pill-active-teal { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+  .cell-pri-coral { background: var(--coral); color: #fff; border-color: var(--coral); transform: scale(1.02); box-shadow: 0 4px 10px rgba(209, 90, 54, 0.2);}
+  .cell-sec-coral { background: var(--coral-bg); color: var(--coral-text); border-color: rgba(209, 90, 54, 0.2); }
+  .pill-active-coral { background: var(--coral); color: #fff; border-color: var(--coral); }
+
+  .cell-pri-blue { background: var(--blue); color: #fff; border-color: var(--blue); transform: scale(1.02); box-shadow: 0 4px 10px rgba(42, 121, 201, 0.2);}
+  .cell-sec-blue { background: var(--blue-bg); color: var(--blue-text); border-color: rgba(42, 121, 201, 0.2); }
+  .pill-active-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+  .cell-pri-amber { background: var(--amber); color: #fff; border-color: var(--amber); transform: scale(1.02); box-shadow: 0 4px 10px rgba(201, 128, 28, 0.2);}
+  .cell-sec-amber { background: var(--amber-bg); color: var(--amber-text); border-color: rgba(201, 128, 28, 0.2); }
+  .pill-active-amber { background: var(--amber); color: #fff; border-color: var(--amber); }
+
+  .cell-pri-pink { background: var(--pink); color: #fff; border-color: var(--pink); transform: scale(1.02); box-shadow: 0 4px 10px rgba(204, 75, 115, 0.2);}
+  .cell-sec-pink { background: var(--pink-bg); color: var(--pink-text); border-color: rgba(204, 75, 115, 0.2); }
+  .pill-active-pink { background: var(--pink); color: #fff; border-color: var(--pink); }
+
+  .cell-pri-gray { background: var(--gray); color: #fff; border-color: var(--gray); transform: scale(1.02); box-shadow: 0 4px 10px rgba(136, 136, 136, 0.2);}
+  .cell-sec-gray { background: var(--gray-bg); color: var(--gray-text); border-color: rgba(136, 136, 136, 0.2); }
+  .pill-active-gray { background: var(--gray); color: #fff; border-color: var(--gray); }
+  
+  .cell-active-mbti { background: var(--text); color: var(--bg); border-color: var(--text); transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+  /* MBTI 反查状态列表 */
+  .res-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 400px; padding-right: 4px; }
+  .res-list::-webkit-scrollbar { width: 4px; }
+  .res-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  .res-group-title { font-size: 11px; font-weight: bold; color: var(--text3); letter-spacing: 1px; margin-top: 8px; margin-bottom: 4px;}
+  .res-item { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 12px; display: flex; align-items: flex-start; gap: 10px; }
+  .res-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: #fff; flex-shrink: 0;}
+  .res-content h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .res-content p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  
+  .detail-box { background: var(--bg2); padding: 16px; border-radius: var(--radius); margin-top: 16px; border: 0.5px solid var(--border); }
+  .detail-box h4 { font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .detail-box p { font-size: 13px; color: var(--text2); }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>SBTI × MBTI 终极融合系统</h1>
+    <p>底层维度对照 · 四象限架构解析 · 25+2全人格映射 · 双向概率热力图</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">系统概览</button>
+    <button class="tab" onclick="showTab('dimensions')">维度对照</button>
+    <button class="tab" onclick="showTab('quadrants')">四象限架构</button>
+    <button class="tab" onclick="showTab('mapping')">全人格映射表</button>
+    <button class="tab" onclick="showTab('heatmap')">双向热力系统</button>
+  </div>
+
+  <!-- Tab 1: Overview -->
+  <div id="tab-overview" class="section active">
+    <div class="grid-2" style="margin-bottom: 12px;">
+      <div class="card">
+        <div class="label lb-purple">SBTI</div>
+        <h3>自我基础特征测试</h3>
+        <p>5大模型 · 15个维度 · 每维度 L/M/H<br>通过向量相似度匹配25种人格类型（如 CTRL、BOSS、MONK…）<br><br>计算方式：累加每维度2题得分 → 总分≤3为L、=4为M、≥5为H → 与标准向量比对欧氏距离</p>
+      </div>
+      <div class="card">
+        <div class="label lb-blue">MBTI / 16P</div>
+        <h3>迈尔斯-布里格斯类型指标</h3>
+        <p>4个维度 · 60道题 · 每维度百分比<br>组合出16种类型（INTJ、ENFP…）+ 第5维 A/T（自信/动荡）<br><br>计算方式：统计每维度正方向题目占比 → 超50%判为该方向字母 → 拼接4字母编码</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom: 12px;">两套系统的共性</h3>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-teal">共性 1</div><div class="dim-name">多维度连续评分</div><div class="dim-desc">都不是二元标签，而是在各个维度上测量倾向强度</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-teal">共性 2</div><div class="dim-name">向内与向外的张力</div><div class="dim-desc">SBTI 的 So1（社交主动性）↔ MBTI 的 E/I；两者都关注社交能量方向</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-teal">共性 3</div><div class="dim-name">情绪稳定性</div><div class="dim-desc">SBTI 的 E1（依恋安全感）+ S1（自尊自信）↔ MBTI 第5维 A/T（自信/动荡）</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-teal">共性 4</div><div class="dim-name">计划与执行风格</div><div class="dim-desc">SBTI 的 Ac2（决策风格）+ Ac3（执行模式）↔ MBTI 的 J/P（判断/知觉）</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-teal">共性 5</div><div class="dim-name">情感 vs 逻辑决策</div><div class="dim-desc">SBTI 的 E2（情感投入）+ A1（世界观）↔ MBTI 的 T/F（思考/情感）</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Dimensions -->
+  <div id="tab-dimensions" class="section">
+    <div class="card">
+      <h3 style="margin-bottom: 12px;">SBTI 维度 → MBTI 对应关系</h3>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-purple">SBTI</div><div class="dim-name">S1 自尊自信</div><div class="dim-desc">L=自我否定 / H=自我稳定</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">第5维 A（自信型）/ T（动荡型）</div><div class="dim-desc">S1-H ↔ -A；S1-L ↔ -T</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-purple">SBTI</div><div class="dim-name">S2 自我清晰度</div><div class="dim-desc">L=迷茫 / H=清晰</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">N（直觉）/ S（实感）+ A/T</div><div class="dim-desc">S2-H 与 N+A 相关；S2-L 与 T 相关</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-purple">SBTI</div><div class="dim-name">S3 核心价值</div><div class="dim-desc">L=躺平导向 / H=成就导向</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">J/P 部分 + T/F</div><div class="dim-desc">S3-H ↔ J型；S3-L ↔ P型</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-coral">SBTI</div><div class="dim-name">E1 依恋安全感</div><div class="dim-desc">L=焦虑型依恋 / H=安全型</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">第5维 A/T（最强对应）</div><div class="dim-desc">E1-H ↔ -A；E1-L ↔ -T</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-coral">SBTI</div><div class="dim-name">E2 情感投入度</div><div class="dim-desc">L=克制型 / H=投入型</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">F（情感）/ T（思考）</div><div class="dim-desc">E2-H ↔ F；E2-L ↔ T</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-coral">SBTI</div><div class="dim-name">E3 边界与依赖</div><div class="dim-desc">L=依赖/融合 / H=独立/边界强</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">I/E 部分</div><div class="dim-desc">E3-H ↔ I倾向；E3-L ↔ E倾向</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-amber">SBTI</div><div class="dim-name">A1 世界观倾向</div><div class="dim-desc">L=悲观/防御 / H=乐观/信任</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">F/T + A/T</div><div class="dim-desc">A1-H ↔ F+A；A1-L ↔ T+T倾向</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-amber">SBTI</div><div class="dim-name">A2 规则与灵活度</div><div class="dim-desc">L=反规则/灵活 / H=守规则/严谨</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">J（判断）/ P（知觉）— 最强对应</div><div class="dim-desc">A2-H ↔ J；A2-L ↔ P</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-amber">SBTI</div><div class="dim-name">A3 人生意义感</div><div class="dim-desc">L=虚无感强 / H=目标感强</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">N（直觉）+ J</div><div class="dim-desc">A3-H ↔ NJ 类型；A3-L ↔ SP 倾向</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-pink">SBTI</div><div class="dim-name">Ac1 动机导向</div><div class="dim-desc">L=规避导向 / H=成就导向</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">J + T（部分）</div><div class="dim-desc">Ac1-H ↔ TJ；Ac1-L ↔ P+T倾向</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-pink">SBTI</div><div class="dim-name">Ac2 决策风格</div><div class="dim-desc">L=犹豫/反复 / H=果断</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">J（判断）/ P（知觉）</div><div class="dim-desc">Ac2-H ↔ J；Ac2-L ↔ P；同 A2 方向</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-pink">SBTI</div><div class="dim-name">Ac3 执行模式</div><div class="dim-desc">L=临时抱佛脚 / H=主动推进</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">J（判断）</div><div class="dim-desc">Ac3-H ↔ J；Ac3-L ↔ P</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-teal">SBTI</div><div class="dim-name">So1 社交主动性</div><div class="dim-desc">L=慢热/被动 / H=主动/热情</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">E（外向）/ I（内向）— 最强对应</div><div class="dim-desc">So1-H ↔ E；So1-L ↔ I</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-teal">SBTI</div><div class="dim-name">So2 人际边界感</div><div class="dim-desc">L=亲近/融合 / H=边界/疏离</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">I/E + T/F</div><div class="dim-desc">So2-H ↔ I+T；So2-L ↔ E+F</div></div>
+      </div>
+      <div class="dim-row">
+        <div class="dim-left"><div class="label lb-teal">SBTI</div><div class="dim-name">So3 表达与真实度</div><div class="dim-desc">L=直接/透明 / H=适应/多面</div></div>
+        <div class="arrow-mid">→</div>
+        <div class="dim-right"><div class="label lb-blue">MBTI</div><div class="dim-name">F/T（部分）</div><div class="dim-desc">So3-H ↔ F（社交适应）；So3-L ↔ T（直接表达）</div></div>
+      </div>
+    </div>
+    <p style="font-size: 12px; color: var(--text3); margin-top: 1rem; line-height: 1.65; font-family: sans-serif; font-style: italic;">注：SBTI 15维 → MBTI 4+1维，是多对一的映射。MBTI 每个维度通常对应 SBTI 2-4个维度的综合信号，单个 SBTI 维度对 MBTI 的预测力是概率性的，不是确定性推导。</p>
+  </div>
+
+  <!-- Tab 3: Quadrants -->
+  <div id="tab-quadrants" class="section">
+    <div class="card" style="margin-bottom: 0;">
+      <h3 style="margin-bottom: 4px;">坐标系解码：四象限架构</h3>
+      <p style="margin-bottom: 16px;">SBTI 的底层并未使用 MBTI 的四个维度，而是建立了一个二维坐标系：<br>
+      • <strong>Y轴 (掌控推进度)：</strong>对应个体的自律、执行力、秩序感 (强关联 J/P)。<br>
+      • <strong>X轴 (外向介入度)：</strong>对应个体在社交和情感中的卷入程度 (强关联 E/I，但更强调“内耗与精力的牵涉”)。</p>
+      
+      <div class="q-grid">
+        <div class="q-box" style="background: var(--blue-bg); border-color: rgba(42, 121, 201, 0.2);">
+          <div class="q-header" style="border-color: rgba(42, 121, 201, 0.2);">
+            <div class="q-title" style="color: var(--blue-text);">第一象限：扩张执行型</div>
+            <div class="q-desc">高掌控 · 高介入 (ExTJ, ExFJ)</div>
+          </div>
+          <div class="chip-wrap">
+            <span class="chip">BOSS</span><span class="chip">CTRL</span><span class="chip">GOGO</span><span class="chip">ATM-er</span><span class="chip">SEXY</span><span class="chip">MUM</span><span class="chip">THAN-K</span>
+          </div>
+        </div>
+
+        <div class="q-box" style="background: var(--teal-bg); border-color: rgba(29, 158, 117, 0.2);">
+          <div class="q-header" style="border-color: rgba(29, 158, 117, 0.2);">
+            <div class="q-title" style="color: var(--teal-text);">第二象限：冷静掌控型</div>
+            <div class="q-desc">高掌控 · 低介入 (IxTJ, xxTP)</div>
+          </div>
+          <div class="chip-wrap">
+            <span class="chip">WOC!</span><span class="chip">THIN-K</span><span class="chip">POOR</span><span class="chip">OH-NO</span><span class="chip">SHIT</span><span class="chip">Dior-s</span>
+          </div>
+        </div>
+
+        <div class="q-box" style="background: var(--purple-bg); border-color: rgba(90, 81, 168, 0.2);">
+          <div class="q-header" style="border-color: rgba(90, 81, 168, 0.2);">
+            <div class="q-title" style="color: var(--purple-text);">第三象限：抽离保守型</div>
+            <div class="q-desc">低掌控 · 低介入 (IxFP, INTP)</div>
+          </div>
+          <div class="chip-wrap">
+            <span class="chip">MONK</span><span class="chip">SOLO</span><span class="chip">DEAD</span><span class="chip">MALO</span>
+          </div>
+        </div>
+
+        <div class="q-box" style="background: var(--coral-bg); border-color: rgba(209, 90, 54, 0.2);">
+          <div class="q-header" style="border-color: rgba(209, 90, 54, 0.2);">
+            <div class="q-title" style="color: var(--coral-text);">第四象限：卷入波动型</div>
+            <div class="q-desc">低掌控 · 高介入 (ExFP, 情绪期IxFx)</div>
+          </div>
+          <div class="chip-wrap">
+            <span class="chip">IMSB</span><span class="chip">FAKE</span><span class="chip">JOKE-R</span><span class="chip">LOVE-R</span><span class="chip">IMFW</span><span class="chip">FUCK</span><span class="chip">ZZZZ</span><span class="chip">OJBK</span>
+          </div>
+        </div>
+        
+        <div class="q-box" style="grid-column: 1 / -1; background: var(--bg2); border-style: dashed;">
+          <div class="q-header" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div class="q-title" style="color: var(--text2);">特殊跳层与兜底机制</div>
+              <div class="q-desc" style="text-transform: none;">不参与 15 维算法标准落位</div>
+            </div>
+            <div class="chip-wrap">
+              <span class="chip">DRUNK 酒鬼 (彩蛋)</span><span class="chip">HHHH 傻乐者 (兜底)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Mapping Table -->
+  <div id="tab-mapping" class="section">
+    <div class="table-wrap">
+      <table class="map-table">
+        <thead>
+          <tr>
+            <th width="110">SBTI 状态</th>
+            <th width="100">所属象限</th>
+            <th width="240">高发主阵地 (常见MBTI)</th>
+            <th>偶发游离区 (压力期触发)</th>
+          </tr>
+        </thead>
+        <tbody id="map-tbody"></tbody>
+      </table>
+    </div>
+    <p style="font-size: 12px; color: var(--text3); margin-top: 1rem; font-family: sans-serif; font-style: italic;">注：基于概率云模型，MBTI 与 SBTI 是“底层特质”与“当前面具”的关系。主阵地代表最易自然呈现的状态，游离区代表在特定人生阶段或高压环境下可能触发的状态。</p>
+  </div>
+
+  <!-- Tab 5: Heatmap System -->
+  <div id="tab-heatmap" class="section">
+    <div class="heat-controls">
+      <button class="heat-btn active" onclick="switchHeatMode('sbti_to_mbti')">🎯 查状态落点 (热力图)</button>
+      <button class="heat-btn" onclick="switchHeatMode('mbti_to_sbti')">🎭 查人格面具 (易感区)</button>
+    </div>
+
+    <!-- Mode A: SBTI to MBTI -->
+    <div id="heat-mode-a" class="heat-layout">
+      <div class="heat-panel">
+        <div class="heat-title"><span>选择 SBTI 状态面具 (25+2)</span></div>
+        <div class="sbti-list" id="sbti-pill-container">
+          <!-- JS 渲染 -->
+        </div>
+        <div class="detail-box" id="sbti-detail-box">
+          <!-- JS 渲染详情 -->
+        </div>
+      </div>
+      <div class="heat-panel" style="background: var(--bg2);">
+        <div class="heat-title">
+          <span>该状态在 MBTI 人群中的分布概率</span>
+        </div>
+        <div class="mbti-grid-4x4" id="mbti-heatmap-grid">
+          <!-- JS 渲染 16 宫格 -->
+        </div>
+        <div style="font-size: 12px; color: var(--text3); text-align: center; margin-top: 16px;">点亮的板块代表该 MBTI 类型极易在特定时期触发左侧的状态得分。</div>
+      </div>
+    </div>
+
+    <!-- Mode B: MBTI to SBTI -->
+    <div id="heat-mode-b" class="heat-layout" style="display: none;">
+      <div class="heat-panel">
+        <div class="heat-title"><span>定位你的原生底层逻辑</span></div>
+        <div class="mbti-grid-4x4" id="mbti-select-grid" style="margin-bottom: 20px;">
+          <!-- JS 渲染 16 宫格按钮 -->
+        </div>
+        <div style="background: var(--blue-bg); border: 0.5px solid rgba(42,121,201,0.2); border-radius: var(--radius); padding: 16px; font-size: 13px; color: var(--blue-text); line-height: 1.6;">
+          💡 <strong>状态云解读：</strong> 当脱离绝对理智区、遭遇情感冲击或进入不同的人生阶段时，原生的认知偏好会发生漂移，从而表现为右侧高频掉落的 SBTI 状态面具。
+        </div>
+      </div>
+      <div class="heat-panel" style="background: var(--bg2);">
+        <div class="heat-title">
+          <span id="mbti-target-title" style="color: var(--blue-text); font-family: var(--font-mono); font-size: 16px;">INFP</span> 
+          <span style="font-weight: normal; font-size: 14px;"> 的状态面具掉落概率</span>
+        </div>
+        <div class="res-list" id="mbti-result-list">
+          <!-- JS 渲染结果 -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// 核心数据库：25+2 全人格数据融合
+const sbtiCloudData = [
+  { id: 'CTRL', cn: '拿捏者', core: '高自控、高秩序、高执行的“稳定掌控型”。强烈的理智与宏观规划能力。', q: 'q1', pri: ['INTP', 'INTJ', 'ENTJ'], sec: ['ISTJ', 'ESTJ'], color: 'blue' },
+  { id: 'ATM-er', cn: '送钱者', core: '可靠、能扛事、愿意投入，但拥有清晰的自我边界和空间意识。', q: 'q1', pri: ['ESFJ', 'ISFJ'], sec: ['ENFJ', 'INFP'], color: 'teal' },
+  { id: 'Dior-s', cn: '屌丝', core: '不算废，但更像是“懒得卷的现实主义者”，随遇而安。', q: 'q2', pri: ['ISTP', 'ISFP'], sec: ['INTP'], color: 'gray' },
+  { id: 'BOSS', cn: '领导者', core: '典型“能扛事、能推进、能拍板”的强执行风格，高度自信。', q: 'q1', pri: ['ENTJ', 'ESTJ'], sec: ['INTJ', 'ENFJ'], color: 'coral' },
+  { id: 'THAN-K', cn: '感恩者', core: '温和、乐观、稳定，自带正能量滤镜，情感投入度高。', q: 'q1', pri: ['ENFP', 'ESFP'], sec: ['ISFP', 'ESFJ'], color: 'teal' },
+  { id: 'OH-NO', cn: '哦不人', core: '高警觉、高秩序、高防御的风险控制型，自我保护意识极强。', q: 'q2', pri: ['ISTJ', 'ISFJ'], sec: ['INFJ', 'INTJ'], color: 'blue' },
+  { id: 'GOGO', cn: '行者', core: '行动优先，少纠结，拒绝内耗，“事情先做了再说”。', q: 'q1', pri: ['ESTP', 'ESTJ'], sec: ['ENTJ', 'ESFP'], color: 'amber' },
+  { id: 'SEXY', cn: '尤物', core: '社交吸引力极强，外放且自信，但不一定真正产生情感依赖。', q: 'q1', pri: ['ENFP', 'ESFP', 'ENFJ'], sec: ['ENTP', 'ISFP'], color: 'pink' },
+  { id: 'LOVE-R', cn: '多情者', core: '极高的情感浓度与理想化，极易陷入，捕捉的是绝对的感性爆发强度。', q: 'q4', pri: ['ISFP', 'ENTP', 'ESFP'], sec: ['ENFP', 'INFP'], color: 'pink' },
+  { id: 'MUM', cn: '妈妈', core: '高社会责任感与过度共情，照顾者模式全开，容易对弱者产生怜惜。', q: 'q1', pri: ['ESFJ', 'ENFJ', 'INFP'], sec: ['ISFJ', 'INFJ'], color: 'amber' },
+  { id: 'FAKE', cn: '伪人', core: '极强的社交适应与面具切换能力。内在并不稳定，但表面无懈可击。', q: 'q4', pri: ['ISFP', 'ENFP', 'ENTP', 'INTP'], sec: ['INFJ', 'ENFJ'], color: 'purple' },
+  { id: 'OJBK', cn: '无所谓人', core: '大写的“都行”，各方面大多居中，不爱过度上头也不爱较真。', q: 'q4', pri: ['ISTP', 'ISFP'], sec: ['INTP'], color: 'teal' },
+  { id: 'MALO', cn: '吗喽', core: '有想法、有自我，不太按文明世界那一套来。常伴随阶段性情感耗竭。', q: 'q3', pri: ['ENFP', 'INFP', 'ISTP'], sec: ['ENTP', 'ESFP', 'ISFP'], color: 'gray' },
+  { id: 'JOKE-R', cn: '小丑', core: '情绪浓、脆弱感强、会搞气氛，用幽默与迎合掩盖深层的内耗与悲观。', q: 'q4', pri: ['INFP', 'ENFP', 'INFJ'], sec: ['ENTP', 'ESFP'], color: 'amber' },
+  { id: 'WOC!', cn: '握草人', core: '表面一惊一乍、反应激烈，内里其实极端冷静、有分寸且懂边界。', q: 'q2', pri: ['ENTP', 'INTJ', 'ISTP'], sec: ['ENFP'], color: 'teal' },
+  { id: 'THIN-K', cn: '思考者', core: '理性、分析型、边界极其清晰，绝不轻易防波逐流，高智力感。', q: 'q2', pri: ['INTJ', 'INTP'], sec: ['ISTP', 'INFJ'], color: 'gray' },
+  { id: 'SHIT', cn: '愤世者', core: '嘴上骂世界，手上收拾残局的“厌世但能干型”。批判性与执行力双高。', q: 'q2', pri: ['ENTP', 'ESTJ', 'INTJ'], sec: ['ISTJ'], color: 'coral' },
+  { id: 'ZZZZ', cn: '装死者', core: '平时躺着，死线一来才极限启动。E/I 反转重灾区，对外失去表达欲。', q: 'q4', pri: ['ENTP', 'ENFP', 'ISFP'], sec: ['INTP', 'INFP'], color: 'gray' },
+  { id: 'POOR', cn: '贫困者', core: '极度聚焦，社交和热闹全部降噪。低欲望低卷入，只想狠抓干正事。', q: 'q2', pri: ['ISTJ', 'INTJ'], sec: ['INTP', 'ISFJ'], color: 'gray' },
+  { id: 'MONK', cn: '修士', core: '低卷入、低亲密、高空间需求的独处修行型。沉浸在自我的规则与逻辑中。', q: 'q3', pri: ['ISFP', 'INTJ', 'INTP'], sec: ['INFJ', 'ISTP'], color: 'purple' },
+  { id: 'IMSB', cn: '傻者', core: '内耗极大、冲不出去、脑内小剧场极多。思想上的巨人，行动上的矮子。', q: 'q4', pri: ['INFP', 'ISFP', 'INTP'], sec: ['INFJ'], color: 'purple' },
+  { id: 'SOLO', cn: '独行者', core: '偏独行、低社交、低依恋。斩断多余连接，但内心并非完全没有方向。', q: 'q3', pri: ['INFP', 'INFJ'], sec: ['INTJ', 'INTP'], color: 'blue' },
+  { id: 'FUCK', cn: '草者', core: '混乱、情绪化、带点防卫性的社交攻击或失控感。理想主义受挫的应激反应。', q: 'q4', pri: ['INFP', 'ENFP'], sec: ['ESTP', 'ENTP'], color: 'coral' },
+  { id: 'DEAD', cn: '死者', core: '低驱动、低投入、低热情的近乎“熄火”状态。生理与心理的双重抽离。', q: 'q3', pri: ['INTP', 'INFP'], sec: ['ISTP'], color: 'gray' },
+  { id: 'IMFW', cn: '废物', core: '脆弱、依赖、极易当真，在关系中容易把自己放在很低且卑微的位置。', q: 'q4', pri: ['ISFP', 'INFP'], sec: ['ISFJ'], color: 'gray' },
+  { id: 'DRUNK', cn: '酒鬼', core: '【彩蛋】通过感官刺激或外向直觉逃避现实，进入酒精接管状态。', q: 'sp', pri: ['ESFP', 'ENFP'], sec: ['ESTP', 'ENTP'], color: 'amber' },
+  { id: 'HHHH', cn: '傻乐者', core: '【兜底】15维度极度分散、东一榔头西一棒槌，什么都不太像的混合体。', q: 'sp', pri: [], sec: ['ENTP', 'ENFP', 'ISFP', 'INFP', 'ESFP'], color: 'teal' }
+];
+
+const mbtiGrid = [
+  ['INTJ', 'INTP', 'ENTJ', 'ENTP'],
+  ['INFJ', 'INFP', 'ENFJ', 'ENFP'],
+  ['ISTJ', 'ISFJ', 'ESTJ', 'ESFJ'],
+  ['ISTP', 'ISFP', 'ESTP', 'ESFP']
+];
+
+const qNames = { 'q1': '一象限', 'q2': '二象限', 'q3': '三象限', 'q4': '四象限', 'sp': '特殊' };
+
+// 渲染静态表格
+function renderTable() {
+  document.getElementById('map-tbody').innerHTML = sbtiCloudData.map(d => `
+    <tr>
+      <td><span class="sbti-code">${d.id}</span></td>
+      <td>
+        <span class="label" style="background:var(--${d.q==='sp'?'gray':d.color}-bg); color:var(--${d.q==='sp'?'gray':d.color}-text); margin:0;">${qNames[d.q]}</span>
+      </td>
+      <td>${d.pri.length ? d.pri.map(m => `<span class="mbti-code t-pri">${m}</span>`).join('') : '<span style="font-size:12px;color:var(--text3)">无强对应</span>'}</td>
+      <td>${d.sec.length ? d.sec.map(m => `<span class="mbti-code t-sec">${m}</span>`).join('') : '<span style="font-size:12px;color:var(--text3)">-</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ---------------- 交互热力系统逻辑 ----------------
+let currentSbti = sbtiCloudData.find(s => s.id === 'LOVE-R');
+let currentMbti = 'INFP';
+
+function initHeatmap() {
+  // 1. 渲染 SBTI Pill 列表
+  const pillContainer = document.getElementById('sbti-pill-container');
+  pillContainer.innerHTML = sbtiCloudData.map(d => `
+    <div class="sbti-pill ${d.id === currentSbti.id ? 'pill-active-'+d.color : ''}" onclick="selectSbti('${d.id}')">
+      ${d.id} <span style="font-weight:normal; opacity:0.7">(${d.cn})</span>
+    </div>
+  `).join('');
+
+  // 2. 渲染 MBTI 4x4 热力图
+  const heatGrid = document.getElementById('mbti-heatmap-grid');
+  heatGrid.innerHTML = mbtiGrid.flat().map(mbti => {
+    const isPri = currentSbti.pri.includes(mbti);
+    const isSec = currentSbti.sec.includes(mbti);
+    let cellClass = '';
+    let badgeText = '';
+    if (isPri) { cellClass = `active-pri cell-pri-${currentSbti.color}`; badgeText = '主责区'; }
+    else if (isSec) { cellClass = `active-sec cell-sec-${currentSbti.color}`; badgeText = '频发区'; }
+    
+    return `<div class="mbti-cell ${cellClass}">
+      ${mbti}
+      <div class="badge">${badgeText}</div>
+    </div>`;
+  }).join('');
+
+  // 3. 渲染 SBTI 详情 Box
+  document.getElementById('sbti-detail-box').innerHTML = `
+    <h4 style="color: var(--${currentSbti.color}-text)">
+      <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--${currentSbti.color});"></span>
+      ${currentSbti.id} <span style="opacity:0.7; font-weight:normal">| ${currentSbti.cn}</span>
+    </h4>
+    <p>${currentSbti.core}</p>
+  `;
+
+  // 4. 渲染 MBTI 反查网格按钮
+  const selectGrid = document.getElementById('mbti-select-grid');
+  selectGrid.innerHTML = mbtiGrid.flat().map(mbti => `
+    <div class="mbti-cell ${mbti === currentMbti ? 'cell-active-mbti' : ''}" style="padding: 1rem 0; font-size:14px;" onclick="selectMbti('${mbti}')">
+      ${mbti}
+    </div>
+  `).join('');
+
+  renderMbtiResults();
+}
+
+function selectSbti(id) {
+  currentSbti = sbtiCloudData.find(s => s.id === id);
+  initHeatmap(); // 重新渲染 Mode A
+}
+
+function selectMbti(mbti) {
+  currentMbti = mbti;
+  document.getElementById('mbti-target-title').innerText = mbti;
+  initHeatmap(); // 更新选中样式
+}
+
+function renderMbtiResults() {
+  const priStates = sbtiCloudData.filter(s => s.pri.includes(currentMbti));
+  const secStates = sbtiCloudData.filter(s => s.sec.includes(currentMbti));
+  
+  let html = '';
+  
+  html += `<div class="res-group-title">🔥 高发主阵地 (常态/高频触发)</div>`;
+  if (priStates.length > 0) {
+    html += priStates.map(s => `
+      <div class="res-item">
+        <div class="res-icon" style="background: var(--${s.color});">${s.id.substring(0,4)}</div>
+        <div class="res-content">
+          <h4>${s.id} <span style="font-weight:normal; opacity:0.7">(${s.cn})</span></h4>
+          <p>${s.core}</p>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    html += `<div class="res-item" style="color:var(--text3); font-size:12px; justify-content:center;">该类型无极度集中的单一主阵地，状态较发散。</div>`;
+  }
+
+  html += `<div class="res-group-title" style="margin-top:16px;">💧 偶发游离区 (压力/情绪期触达)</div>`;
+  if (secStates.length > 0) {
+    html += `<div style="display:flex; flex-wrap:wrap; gap:8px;">` + secStates.map(s => `
+      <div style="background:var(--bg); border:0.5px solid var(--border); padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px;">
+        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--${s.color});"></span>
+        ${s.id} <span style="font-weight:normal; color:var(--text3)">(${s.cn})</span>
+      </div>
+    `).join('') + `</div>`;
+  } else {
+    html += `<div class="res-item" style="color:var(--text3); font-size:12px; justify-content:center; padding:8px;">无明显次要映射。</div>`;
+  }
+
+  document.getElementById('mbti-result-list').innerHTML = html;
+}
+
+function switchHeatMode(mode) {
+  document.querySelectorAll('.heat-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(mode));
+  });
+  document.getElementById('heat-mode-a').style.display = mode === 'sbti_to_mbti' ? 'grid' : 'none';
+  document.getElementById('heat-mode-b').style.display = mode === 'mbti_to_sbti' ? 'grid' : 'none';
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['overview','dimensions','quadrants','mapping','heatmap'][i] === name);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// 初始化
+renderTable();
+initHeatmap();
+</script>
+</body>
+</html>
